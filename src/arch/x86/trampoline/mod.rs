@@ -3,8 +3,18 @@ use crate::arch::x86::thunk;
 use crate::error::{Error, Result};
 use crate::pic;
 use iced_x86::{Decoder, DecoderOptions, Instruction, OpKind};
-use std::ptr::slice_from_raw_parts;
 use std::{mem, slice};
+
+
+// An x86-64 instruction may be at most 15 bytes in length. 
+// It consists of the following components in the given order, where the prefixes are at the least-significant (lowest) address in memory:
+//    - Legacy prefixes (1-4 bytes, optional)
+//    - Opcode with prefixes (1-4 bytes, required)
+//    - ModR/M (1 byte, if required)
+//    - SIB (1 byte, if required)
+//    - Displacement (1, 2, 4 or 8 bytes, if required)
+//    - Immediate (1, 2, 4 or 8 bytes, if required)
+const MAX_SIZE_OF_X64_INSTRUCTION: usize = 15;
 
 mod disasm;
 
@@ -66,15 +76,26 @@ impl Builder {
   pub unsafe fn build(mut self) -> Result<Trampoline> {
     let mut emitter = pic::CodeEmitter::new();
 
-    // 15 = max size of x64 instruction
-    // safety: we don't know the end address of a function so this could be too far
-    // if the function is right at the end of the code section iced_x86 decoder
-    // doesn't have a way to read one byte at a time without creating a slice in
-    // advance and it's invalid to make a slice that's too long we could make a
-    // new Decoder before reading every individual instruction? but it'd still need
-    // to be given a 15 byte slice to handle any valid x64 instruction
     let target: *const u8 = self.target.cast();
-    let slice = unsafe { slice::from_raw_parts(std::hint::black_box(target), self.margin + 15) };
+    let region = region::query(target)?;
+
+    if !region.protection().contains(region::Protection::EXECUTE) {
+      return Err(Error::NotExecutable);
+    }
+
+    // Determine the maximum amount of bytes that can be safely read from the region
+    let region_end = region.as_range().end;
+    let max_safe_len = region_end.saturating_sub(target as usize);
+
+    if max_safe_len < mem::size_of::<u8>() {
+      return Err(Error::NoPatchArea);
+    }
+
+    let requested_len = self.margin + MAX_SIZE_OF_X64_INSTRUCTION;
+    let safe_len = std::cmp::min(requested_len, max_safe_len);
+
+    let slice = unsafe { slice::from_raw_parts(std::hint::black_box(target), safe_len) };
+
     let decoder = Decoder::with_ip(
       (mem::size_of::<usize>() * 8) as u32,
       slice,
@@ -109,6 +130,10 @@ impl Builder {
       if self.finished {
         break;
       }
+    }
+
+    if !self.finished {
+      return Err(Error::NoPatchArea);
     }
 
     Ok(Trampoline {
@@ -166,20 +191,21 @@ impl Builder {
     // These need to be captured by the closure
     let instruction_address = instruction.ip() as isize;
     let instruction_bytes = instruction_bytes.to_vec();
-    let immediate_size = instruction.op_kinds().find_map(|kind| {
-        match kind {
-            OpKind::Immediate8 => Some(1),
-            OpKind::Immediate8_2nd => Some(1),
-            OpKind::Immediate16 => Some(2),
-            OpKind::Immediate32 => Some(4),
-            OpKind::Immediate64 => Some(8),
-            OpKind::Immediate8to16 => Some(1),
-            OpKind::Immediate8to32 => Some(1),
-            OpKind::Immediate8to64 => Some(1),
-            OpKind::Immediate32to64 => Some(4),
-            _ => None,
-        }
-    }).unwrap_or(0);
+    let immediate_size = instruction
+      .op_kinds()
+      .find_map(|kind| match kind {
+        OpKind::Immediate8 => Some(1),
+        OpKind::Immediate8_2nd => Some(1),
+        OpKind::Immediate16 => Some(2),
+        OpKind::Immediate32 => Some(4),
+        OpKind::Immediate64 => Some(8),
+        OpKind::Immediate8to16 => Some(1),
+        OpKind::Immediate8to32 => Some(1),
+        OpKind::Immediate8to64 => Some(1),
+        OpKind::Immediate32to64 => Some(4),
+        _ => None,
+      })
+      .unwrap_or(0);
 
     Ok(Box::new(pic::UnsafeThunk::new(
       move |offset| {
@@ -198,7 +224,7 @@ impl Builder {
 
         // Write the adjusted displacement offset to the operand
         let as_bytes: [u8; 4] = (adjusted_displacement as u32).to_ne_bytes();
-        bytes[index..index+as_bytes.len()].copy_from_slice(&as_bytes);
+        bytes[index..index + as_bytes.len()].copy_from_slice(&as_bytes);
         bytes
       },
       instruction.len(),
