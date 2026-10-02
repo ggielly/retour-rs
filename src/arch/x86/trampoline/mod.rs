@@ -5,8 +5,7 @@ use crate::pic;
 use iced_x86::{Decoder, DecoderOptions, Instruction, OpKind};
 use std::{mem, slice};
 
-
-// An x86-64 instruction may be at most 15 bytes in length. 
+// An x86-64 instruction may be at most 15 bytes in length.
 // It consists of the following components in the given order, where the prefixes are at the least-significant (lowest) address in memory:
 //    - Legacy prefixes (1-4 bytes, optional)
 //    - Opcode with prefixes (1-4 bytes, required)

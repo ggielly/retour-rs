@@ -8,7 +8,6 @@ extern "C" fn sub_detour(x: i32, y: i32) -> i32 {
   unsafe { std::ptr::read_volatile(&x as *const i32) - y }
 }
 
-
 mod raw {
   use super::*;
   use retour::RawDetour;
@@ -124,12 +123,55 @@ mod args_28 {
   use super::*;
   use retour::GenericDetour;
 
-
   type I = i32;
   type BigFn = fn(I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I);
 
-  fn a(_: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I) {}
-  fn b(_: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I) {}
+  fn a(
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+  ) {
+  }
+  fn b(
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+  ) {
+  }
   #[test]
   fn sanity_check() -> Result<()> {
     let hook = unsafe { GenericDetour::<BigFn>::new(a, b) };
@@ -141,14 +183,136 @@ mod args_42 {
   use super::*;
   use retour::GenericDetour;
 
-
   type I = i32;
-  type BiggerFn = fn(I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I);
+  type BiggerFn = fn(
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+    I,
+  );
 
-  fn a(_: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I,
-    _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I) {}
-  fn b(_: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I,
-    _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I, _: I) {}
+  fn a(
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+  ) {
+  }
+  fn b(
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+    _: I,
+  ) {
+  }
   #[test]
   fn sanity_check() -> Result<()> {
     let hook = unsafe { GenericDetour::<BiggerFn>::new(a, b)? };
@@ -156,11 +320,11 @@ mod args_42 {
   }
 }
 
-#[cfg(target_arch="x86_64")]
+#[cfg(target_arch = "x86_64")]
 mod relative_ip {
-  use std::arch::global_asm;
   use super::*;
   use retour::GenericDetour;
+  use std::arch::global_asm;
 
   static VALUE: i32 = 3;
 
@@ -181,7 +345,7 @@ mod relative_ip {
     safe fn check_value() -> bool;
   }
 
-  extern fn new_check_value() -> bool {
+  extern "C" fn new_check_value() -> bool {
     true
   }
 
