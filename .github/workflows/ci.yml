@@ -67,15 +67,17 @@ jobs:
         with:
           platform: x86
           version: 12.2.0 # https://github.com/egor-tensin/setup-mingw/issues/14      
+      # The repository pins nightly via rust-toolchain.toml, so the stable
+      # toolchain must be requested explicitly.
       - name: Cargo Check - Default Features Only
-        run: ${{ matrix.target.rustflags }} cargo check --target ${{ matrix.target.triple }}
-      
+        run: ${{ matrix.target.rustflags }} cargo +stable check --target ${{ matrix.target.triple }}
+
       - name: Cargo Check - All Features
         run: ${{ matrix.target.rustflags }} cargo +nightly check --target ${{ matrix.target.triple }} --all-features
 
       - name: Cargo Tests - Stable
-        run: ${{ matrix.target.rustflags }} cargo test --target ${{ matrix.target.triple }}
-      
+        run: ${{ matrix.target.rustflags }} cargo +stable test --target ${{ matrix.target.triple }}
+
       - name: Cargo Tests - Nightly
         run: ${{ matrix.target.rustflags }} cargo +nightly test --target ${{ matrix.target.triple }} --all-features
 
